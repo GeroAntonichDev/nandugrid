@@ -144,6 +144,22 @@
   .chip:hover {
     @apply border-white/40 text-white;
   }
+
+  .field-label {
+    @apply mb-1.5 block text-[11px] font-medium uppercase tracking-[0.18em] text-neutral-500;
+  }
+
+  .input {
+    @apply w-full rounded-xl border border-ink-700 bg-ink-900 px-4 py-2.5 text-sm text-white transition;
+  }
+
+  .input::placeholder {
+    @apply text-neutral-600;
+  }
+
+  .input:focus {
+    @apply border-accent-500 outline-none ring-1 ring-accent-500/40;
+  }
 }
 
 @layer utilities {

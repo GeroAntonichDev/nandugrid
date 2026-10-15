@@ -18,4 +18,5 @@ export interface Photo {
   title: string;
   author: string;
   createdAt: string;
+  price?: number;
 }
