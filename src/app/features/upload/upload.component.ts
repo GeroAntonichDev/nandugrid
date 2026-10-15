@@ -58,9 +58,13 @@ export class UploadComponent {
   readonly shutter = signal('');
   readonly price = signal<number | null>(null);
 
-  readonly canPublish = computed(
-    () => this.purpose() !== null && this.previewUrl() !== null && this.title().trim().length > 0,
-  );
+  readonly canPublish = computed(() => {
+    const purpose = this.purpose();
+    if (!purpose || !this.previewUrl() || !this.title().trim()) {
+      return false;
+    }
+    return purpose !== 'feedback' || this.camera().trim().length > 0;
+  });
 
   selectPurpose(value: PhotoPurpose): void {
     this.purpose.set(value);
@@ -117,17 +121,26 @@ export class UploadComponent {
       title: this.title().trim(),
       author: this.authService.currentUser()?.displayName ?? 'Tú',
       createdAt: new Date().toISOString(),
-      exif: {
-        camera: this.camera().trim() || undefined,
-        lens: this.lens().trim() || undefined,
-        iso: iso ?? undefined,
-        aperture: this.aperture().trim() || undefined,
-        shutter: this.shutter().trim() || undefined,
-      },
+      exif:
+        purpose === 'feedback'
+          ? {
+              camera: this.camera().trim() || undefined,
+              lens: this.lens().trim() || undefined,
+              iso: iso ?? undefined,
+              aperture: this.aperture().trim() || undefined,
+              shutter: this.shutter().trim() || undefined,
+            }
+          : {},
       ...(purpose === 'commercial' && price ? { price } : {}),
     };
 
     this.photoService.addPhoto(photo);
+
+    if (purpose === 'commercial') {
+      const username = this.authService.currentUser()?.username ?? 'tu-usuario';
+      this.router.navigate(['/u', username]);
+      return;
+    }
     this.router.navigate(['/']);
   }
 

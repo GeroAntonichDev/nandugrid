@@ -1,9 +1,20 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
+import { toSignal } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, RouterLink } from '@angular/router';
 import { AuthMockService } from '../../core/services/auth-mock.service';
 import { PhotoMockService } from '../../core/services/photo-mock.service';
 import { PhotoDetailModalComponent } from '../../shared/components/photo-detail-modal/photo-detail-modal.component';
 import { PhotoCardComponent } from '../../shared/components/photo-card/photo-card.component';
+
+function slugify(value: string): string {
+  return value
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '');
+}
 
 @Component({
   selector: 'app-portfolio',
@@ -123,11 +134,27 @@ export class PortfolioComponent {
   private readonly auth = inject(AuthMockService);
   private readonly photoService = inject(PhotoMockService);
 
+  private readonly paramMap = toSignal(this.route.paramMap, {
+    initialValue: this.route.snapshot.paramMap,
+  });
+
   readonly currentUser = this.auth.currentUser;
-  readonly profile = computed(() => this.username === this.auth.demoProfile().username ? this.auth.demoProfile() : null);
-  readonly username = this.route.snapshot.paramMap.get('username') ?? 'tu-usuario';
-  readonly isOwnProfile = computed(() => this.auth.isAuthenticated() && this.username === this.currentUser()?.username);
-  readonly author = computed(() => this.profile()?.displayName ?? this.username);
+  readonly username = computed(() => this.paramMap().get('username') ?? '');
+  readonly profile = computed(() =>
+    this.username() === this.auth.demoProfile().username ? this.auth.demoProfile() : null,
+  );
+  readonly isOwnProfile = computed(
+    () => this.auth.isAuthenticated() && this.username() === this.currentUser()?.username,
+  );
+  readonly author = computed(() => {
+    const profile = this.profile();
+    if (profile) {
+      return profile.displayName;
+    }
+    const username = this.username();
+    const match = this.photoService.photos().find((photo) => slugify(photo.author) === username);
+    return match?.author ?? (username.replace(/-/g, ' ') || 'Portafolio');
+  });
   readonly initials = computed(() => this.author().split(/\s+/).slice(0, 2).map((part) => part[0]).join('').toUpperCase());
   readonly photos = computed(() => this.photoService.getByAuthor(this.author()));
   readonly totalUpvotes = computed(() => this.photos().reduce((total, photo) => total + photo.upvotes, 0));

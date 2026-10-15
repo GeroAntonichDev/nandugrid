@@ -37,6 +37,9 @@ yarn-error.log
 testem.log
 /typings
 
+# Documentación local (no se publica en GitHub)
+/nandugrid-documentacion.tex
+
 # System files
 .DS_Store
 Thumbs.db

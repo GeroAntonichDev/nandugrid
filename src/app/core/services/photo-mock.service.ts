@@ -92,6 +92,12 @@ export class PhotoMockService {
   readonly comments = this._comments.asReadonly();
   readonly total = computed(() => this._photos().length);
 
+  readonly feedPhotos = computed(() =>
+    this._photos()
+      .filter((photo) => photo.purpose !== 'commercial')
+      .sort((a, b) => b.upvotes - a.upvotes),
+  );
+
   getPhotos(): Promise<Photo[]> {
     return Promise.resolve(this._photos());
   }

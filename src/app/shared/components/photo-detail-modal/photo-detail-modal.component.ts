@@ -71,64 +71,126 @@ import { WatermarkOverlayComponent } from '../watermark-overlay/watermark-overla
                 </div>
               </div>
               <h2 class="mt-4 font-display text-xl font-semibold text-white">{{ photo.title }}</h2>
-              @if (photo.price) {
+
+              @if (isCommercial) {
+                <div class="mt-3 rounded-2xl border border-accent-500/30 bg-accent-500/10 p-4">
+                  <p class="text-[11px] uppercase tracking-[0.18em] text-accent-400">
+                    Servicio de fotografía
+                  </p>
+                  @if (photo.price) {
+                    <p class="mt-1 text-lg font-semibold text-white">
+                      Desde $ {{ photo.price.toLocaleString('es-PY') }}
+                    </p>
+                  }
+                  <button
+                    type="button"
+                    class="btn-accent mt-3 w-full"
+                    [disabled]="contactRequested()"
+                    (click)="requestContact()"
+                  >
+                    {{ contactRequested() ? 'Solicitud enviada' : 'Contactar / Contratar' }}
+                  </button>
+                  @if (contactRequested()) {
+                    <p class="mt-2 text-[11px] leading-relaxed text-neutral-400">
+                      El canal privado con el fotógrafo se habilita en la Fase 2.
+                    </p>
+                  }
+                </div>
+              } @else if (photo.price) {
                 <p class="mt-1 text-sm text-accent-300">
                   Servicio desde $ {{ photo.price.toLocaleString('es-PY') }}
                 </p>
               }
+
               <app-exif-bar class="mt-3 block" [exif]="photo.exif" />
             </div>
 
-            @if (isAuthenticated()) {
-            <div class="flex items-center justify-between px-5 pt-4">
-              <h3 class="text-[11px] uppercase tracking-[0.22em] text-neutral-500">Comentarios</h3>
-              <span class="text-[11px] text-neutral-600">{{ comments().length }}</span>
-            </div>
-
-            <div class="flex-1 overflow-y-auto px-5 py-2">
-              @for (comment of comments(); track comment.id) {
-                <div class="flex gap-3 py-3">
-                  <div
-                    class="h-8 w-8 shrink-0 rounded-full bg-gradient-to-br from-accent-300 to-accent-700 ring-1 ring-white/10"
-                  ></div>
-                  <div class="min-w-0">
-                    <p class="text-sm">
-                      <span class="font-medium text-white">{{ comment.authorName }}</span>
-                      <span class="ml-1 text-[11px] text-neutral-600">{{ timeAgo(comment.createdAt) }}</span>
-                    </p>
-                    <p class="mt-1 text-sm leading-relaxed text-neutral-300">{{ comment.text }}</p>
-                  </div>
-                </div>
-              } @empty {
-                <p class="py-8 text-center text-sm text-neutral-500">Sé el primero en comentar.</p>
-              }
-            </div>
-
-            <div class="border-t border-ink-800 p-4">
-              <div class="flex items-end gap-2">
-                <textarea
-                  rows="1"
-                  placeholder="Escribí un comentario técnico..."
-                  [value]="draft()"
-                  (input)="draft.set($any($event.target).value)"
-                  (keydown.enter)="onEnter($event)"
-                  class="input resize-none"
-                ></textarea>
-                <button
-                  type="button"
-                  class="btn-accent px-4 py-2.5"
-                  [disabled]="!draft().trim()"
-                  (click)="submit()"
+            @if (isCommercial) {
+              <div class="flex flex-1 flex-col items-center justify-center px-6 text-center">
+                <svg
+                  class="h-7 w-7 text-neutral-600"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="1.6"
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  aria-hidden="true"
                 >
-                  Enviar
-                </button>
+                  <rect x="4" y="11" width="16" height="9" rx="2" />
+                  <path d="M8 11V7a4 4 0 0 1 8 0v4" />
+                </svg>
+                <p class="mt-3 text-sm leading-relaxed text-neutral-400">
+                  La crítica técnica está desactivada en las fotos de portafolio comercial.
+                </p>
+                <p class="mt-1 text-[11px] text-neutral-600">
+                  Contactá al fotógrafo para contratar sus servicios.
+                </p>
               </div>
-            </div>
+            } @else if (isAuthenticated()) {
+              <div class="flex items-center justify-between px-5 pt-4">
+                <h3 class="text-[11px] uppercase tracking-[0.22em] text-neutral-500">
+                  Comentarios
+                </h3>
+                <span class="text-[11px] text-neutral-600">{{ comments().length }}</span>
+              </div>
+
+              <div class="flex-1 overflow-y-auto px-5 py-2">
+                @for (comment of comments(); track comment.id) {
+                  <div class="flex gap-3 py-3">
+                    <div
+                      class="h-8 w-8 shrink-0 rounded-full bg-gradient-to-br from-accent-300 to-accent-700 ring-1 ring-white/10"
+                    ></div>
+                    <div class="min-w-0">
+                      <p class="text-sm">
+                        <span class="font-medium text-white">{{ comment.authorName }}</span>
+                        <span class="ml-1 text-[11px] text-neutral-600">{{
+                          timeAgo(comment.createdAt)
+                        }}</span>
+                      </p>
+                      <p class="mt-1 text-sm leading-relaxed text-neutral-300">
+                        {{ comment.text }}
+                      </p>
+                    </div>
+                  </div>
+                } @empty {
+                  <p class="py-8 text-center text-sm text-neutral-500">
+                    Sé el primero en comentar.
+                  </p>
+                }
+              </div>
+
+              <div class="border-t border-ink-800 p-4">
+                <div class="flex items-end gap-2">
+                  <textarea
+                    rows="1"
+                    placeholder="Escribí un comentario técnico..."
+                    [value]="draft()"
+                    (input)="draft.set($any($event.target).value)"
+                    (keydown.enter)="onEnter($event)"
+                    class="input resize-none"
+                  ></textarea>
+                  <button
+                    type="button"
+                    class="btn-accent px-4 py-2.5"
+                    [disabled]="!draft().trim()"
+                    (click)="submit()"
+                  >
+                    Enviar
+                  </button>
+                </div>
+              </div>
             } @else {
               <div class="flex flex-1 flex-col items-center justify-center px-8 text-center">
-                <h3 class="font-display text-lg font-medium text-white">Únete a la conversación</h3>
-                <p class="mt-2 max-w-xs text-sm leading-relaxed text-neutral-400">Inicia sesión para ver los comentarios y compartir tu opinión.</p>
-                <button type="button" class="btn-accent mt-5 px-5 py-3" (click)="login()">Entrar en modo demostración</button>
+                <h3 class="font-display text-lg font-medium text-white">
+                  Únete a la conversación
+                </h3>
+                <p class="mt-2 max-w-xs text-sm leading-relaxed text-neutral-400">
+                  Inicia sesión para ver los comentarios y compartir tu opinión.
+                </p>
+                <button type="button" class="btn-accent mt-5 px-5 py-3" (click)="login()">
+                  Entrar en modo demostración
+                </button>
               </div>
             }
           </div>
@@ -146,6 +208,7 @@ export class PhotoDetailModalComponent {
 
   readonly draft = signal('');
   readonly isAuthenticated = this.auth.isAuthenticated;
+  readonly contactRequested = signal(false);
   readonly comments = computed(() =>
     this.photoService.comments().filter((comment) => comment.photoId === this.photo.id),
   );
@@ -163,6 +226,10 @@ export class PhotoDetailModalComponent {
         document.body.style.overflow = '';
       };
     });
+  }
+
+  get isCommercial(): boolean {
+    return this.photo.purpose === 'commercial';
   }
 
   @HostListener('document:keydown.escape')
@@ -214,5 +281,9 @@ export class PhotoDetailModalComponent {
 
   login(): void {
     void this.auth.login();
+  }
+
+  requestContact(): void {
+    this.contactRequested.set(true);
   }
 }

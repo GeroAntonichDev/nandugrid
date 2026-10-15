@@ -59,7 +59,7 @@ export class FeedComponent {
   private readonly photoService = inject(PhotoMockService);
   private readonly auth = inject(AuthMockService);
 
-  readonly photos = this.photoService.photos;
+  readonly photos = this.photoService.feedPhotos;
   readonly loginWall = signal(false);
   readonly selectedPhotoId = signal<string | null>(null);
   readonly selectedPhoto = computed(

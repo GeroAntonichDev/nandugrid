@@ -5,8 +5,8 @@
       Subir foto
     </h1>
     <p class="mt-2 max-w-md text-sm leading-relaxed text-neutral-400">
-      Elegí el propósito de tu foto y completá los detalles. Los datos EXIF se completan
-      automáticamente.
+      Elegí el propósito de tu foto y completá los detalles. En Feedback Técnico los
+      datos EXIF se completan automáticamente.
     </p>
   </header>
 
@@ -108,63 +108,70 @@
           />
         </div>
 
-        <div>
-          <label class="field-label" for="camera">Cámara</label>
-          <input
-            id="camera"
-            type="text"
-            [value]="camera()"
-            (input)="camera.set($any($event.target).value)"
-            class="input"
-          />
-        </div>
+        @if (purpose() === 'feedback') {
+          <div>
+            <label class="field-label" for="camera">Cámara</label>
+            <input
+              id="camera"
+              type="text"
+              [value]="camera()"
+              (input)="camera.set($any($event.target).value)"
+              class="input"
+            />
+          </div>
 
-        <div class="grid grid-cols-2 gap-3">
-          <div>
-            <label class="field-label" for="lens">Lente</label>
-            <input
-              id="lens"
-              type="text"
-              [value]="lens()"
-              (input)="lens.set($any($event.target).value)"
-              class="input"
-            />
+          <div class="grid grid-cols-2 gap-3">
+            <div>
+              <label class="field-label" for="lens">Lente</label>
+              <input
+                id="lens"
+                type="text"
+                [value]="lens()"
+                (input)="lens.set($any($event.target).value)"
+                class="input"
+              />
+            </div>
+            <div>
+              <label class="field-label" for="iso">ISO</label>
+              <input
+                id="iso"
+                type="number"
+                min="50"
+                max="12800"
+                [value]="iso() ?? ''"
+                (input)="iso.set($any($event.target).valueAsNumber || null)"
+                class="input"
+              />
+            </div>
+            <div>
+              <label class="field-label" for="aperture">Apertura</label>
+              <input
+                id="aperture"
+                type="text"
+                placeholder="f/2.8"
+                [value]="aperture()"
+                (input)="aperture.set($any($event.target).value)"
+                class="input"
+              />
+            </div>
+            <div>
+              <label class="field-label" for="shutter">Vel. obturación</label>
+              <input
+                id="shutter"
+                type="text"
+                placeholder="1/250"
+                [value]="shutter()"
+                (input)="shutter.set($any($event.target).value)"
+                class="input"
+              />
+            </div>
           </div>
-          <div>
-            <label class="field-label" for="iso">ISO</label>
-            <input
-              id="iso"
-              type="number"
-              min="50"
-              max="12800"
-              [value]="iso() ?? ''"
-              (input)="iso.set($any($event.target).valueAsNumber || null)"
-              class="input"
-            />
-          </div>
-          <div>
-            <label class="field-label" for="aperture">Apertura</label>
-            <input
-              id="aperture"
-              type="text"
-              placeholder="f/2.8"
-              [value]="aperture()"
-              (input)="aperture.set($any($event.target).value)"
-              class="input"
-            />
-          </div>
-          <div>
-            <label class="field-label" for="shutter">Vel. obturación</label>
-            <input
-              id="shutter"
-              type="text"
-              placeholder="1/250"
-              [value]="shutter()"
-              (input)="shutter.set($any($event.target).value)"
-              class="input"
-            />
-          </div>
-        </div>
+
+          <p class="text-[11px] leading-relaxed text-neutral-500">
+            EXIF obligatorio para feedback: la comunidad necesita estos datos para
+            darte una crítica precisa.
+          </p>
+        }
 
         @if (purpose() === 'commercial') {
           <div>
