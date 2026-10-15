@@ -1,5 +1,7 @@
-import { Injectable, computed, signal } from '@angular/core';
+import { Injectable, computed, inject, signal } from '@angular/core';
+import { Comment } from '../models/comment.model';
 import { Photo } from '../models/photo.model';
+import { AuthMockService } from './auth-mock.service';
 
 const MOCK_PHOTOS: Photo[] = [
   {
@@ -55,11 +57,39 @@ const MOCK_PHOTOS: Photo[] = [
   },
 ];
 
+const MOCK_COMMENTS: Comment[] = [
+  {
+    id: 'cm-001',
+    photoId: 'ph-001',
+    authorName: 'Diego Fernández',
+    text: 'Excelente manejo de la luz en el horizonte. ¿Usaste filtro polarizador?',
+    createdAt: new Date('2026-10-12T10:15:00.000Z'),
+  },
+  {
+    id: 'cm-002',
+    photoId: 'ph-001',
+    authorName: 'Lucía Méndez',
+    text: 'La composición guía muy bien la mirada. Quizás un poco más de contraste en las sombras.',
+    createdAt: new Date('2026-10-12T11:02:00.000Z'),
+  },
+  {
+    id: 'cm-003',
+    photoId: 'ph-002',
+    authorName: 'Camila Rojas',
+    text: 'Ese rayo de luz entre los árboles es mágico. ¡Gran momento capturado!',
+    createdAt: new Date('2026-10-13T18:40:00.000Z'),
+  },
+];
+
 @Injectable({ providedIn: 'root' })
 export class PhotoMockService {
+  private readonly auth = inject(AuthMockService);
+
   private readonly _photos = signal<Photo[]>(MOCK_PHOTOS);
+  private readonly _comments = signal<Comment[]>(MOCK_COMMENTS);
 
   readonly photos = this._photos.asReadonly();
+  readonly comments = this._comments.asReadonly();
   readonly total = computed(() => this._photos().length);
 
   getPhotos(): Promise<Photo[]> {
@@ -78,5 +108,23 @@ export class PhotoMockService {
 
   addPhoto(photo: Photo): void {
     this._photos.update((photos) => [photo, ...photos]);
+  }
+
+  addComment(photoId: string, text: string): void {
+    const trimmed = text.trim();
+    if (!trimmed) {
+      return;
+    }
+    const authorName = this.auth.currentUser()?.displayName ?? 'Tú';
+    this._comments.update((comments) => [
+      ...comments,
+      {
+        id: globalThis.crypto?.randomUUID?.() ?? `cm-${Date.now()}`,
+        photoId,
+        authorName,
+        text: trimmed,
+        createdAt: new Date(),
+      },
+    ]);
   }
 }

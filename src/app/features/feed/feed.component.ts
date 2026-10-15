@@ -1,11 +1,12 @@
-import { ChangeDetectionStrategy, Component, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { PhotoMockService } from '../../core/services/photo-mock.service';
 import { PhotoCardComponent } from '../../shared/components/photo-card/photo-card.component';
+import { PhotoDetailModalComponent } from '../../shared/components/photo-detail-modal/photo-detail-modal.component';
 
 @Component({
   selector: 'app-feed',
   standalone: true,
-  imports: [PhotoCardComponent],
+  imports: [PhotoCardComponent, PhotoDetailModalComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <section class="mx-auto max-w-2xl px-4 pb-24 pt-10 sm:px-6">
@@ -30,11 +31,19 @@ import { PhotoCardComponent } from '../../shared/components/photo-card/photo-car
 
       <div class="mt-8 flex flex-col gap-12">
         @for (photo of photos(); track photo.id) {
-          <app-photo-card [photo]="photo" (onUpvote)="upvote($event)" />
+          <app-photo-card
+            [photo]="photo"
+            (onUpvote)="upvote($event)"
+            (onPhotoClick)="openPhoto($event)"
+          />
         } @empty {
           <p class="py-16 text-center text-sm text-neutral-500">Todavía no hay fotos. ¡Subí la primera!</p>
         }
       </div>
+
+      @if (selectedPhoto(); as photo) {
+        <app-photo-detail-modal [photo]="photo" (onClose)="closePhoto()" />
+      }
     </section>
   `,
 })
@@ -42,8 +51,20 @@ export class FeedComponent {
   private readonly photoService = inject(PhotoMockService);
 
   readonly photos = this.photoService.photos;
+  readonly selectedPhotoId = signal<string | null>(null);
+  readonly selectedPhoto = computed(
+    () => this.photos().find((photo) => photo.id === this.selectedPhotoId()) ?? null,
+  );
 
   upvote(id: string): void {
     this.photoService.upvote(id);
+  }
+
+  openPhoto(id: string): void {
+    this.selectedPhotoId.set(id);
+  }
+
+  closePhoto(): void {
+    this.selectedPhotoId.set(null);
   }
 }

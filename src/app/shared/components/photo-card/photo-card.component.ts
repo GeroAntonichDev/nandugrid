@@ -9,14 +9,19 @@ import { ExifBarComponent } from '../exif-bar/exif-bar.component';
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <article class="group animate-fade-in-up">
-      <div class="overflow-hidden rounded-3xl border border-white/5 bg-ink-900 shadow-soft">
+      <button
+        type="button"
+        (click)="onPhotoClick.emit(photo.id)"
+        class="block w-full cursor-pointer overflow-hidden rounded-3xl border border-white/5 bg-ink-900 shadow-soft focus:outline-none focus-visible:ring-2 focus-visible:ring-accent-500/60"
+        [attr.aria-label]="'Abrir ' + photo.title"
+      >
         <img
           [src]="photo.url"
           [alt]="photo.title"
           loading="lazy"
           class="aspect-[4/3] w-full object-cover transition duration-700 ease-out group-hover:scale-[1.02]"
         />
-      </div>
+      </button>
 
       <div class="mt-4 flex items-center justify-between gap-4">
         <div class="flex min-w-0 items-center gap-3">
@@ -62,6 +67,7 @@ import { ExifBarComponent } from '../exif-bar/exif-bar.component';
 export class PhotoCardComponent {
   @Input({ required: true }) photo!: Photo;
   @Output() onUpvote = new EventEmitter<string>();
+  @Output() onPhotoClick = new EventEmitter<string>();
 
   private readonly purposeLabels: Record<PhotoPurpose, string> = {
     hobby: 'Hobby',
