@@ -12,12 +12,14 @@ import {
 } from '@angular/core';
 import { Photo, PhotoPurpose } from '../../../core/models/photo.model';
 import { PhotoMockService } from '../../../core/services/photo-mock.service';
+import { AuthMockService } from '../../../core/services/auth-mock.service';
 import { ExifBarComponent } from '../exif-bar/exif-bar.component';
+import { WatermarkOverlayComponent } from '../watermark-overlay/watermark-overlay.component';
 
 @Component({
   selector: 'app-photo-detail-modal',
   standalone: true,
-  imports: [ExifBarComponent],
+  imports: [ExifBarComponent, WatermarkOverlayComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <div class="fixed inset-0 z-50 flex bg-ink-950/95 backdrop-blur-md" (click)="onClose.emit()">
@@ -46,12 +48,13 @@ import { ExifBarComponent } from '../exif-bar/exif-bar.component';
         </button>
 
         <div class="grid min-h-0 flex-1 lg:grid-cols-[minmax(0,1fr)_360px]">
-          <div class="flex min-h-0 items-center justify-center bg-ink-950/60 p-4">
+          <div class="relative flex min-h-0 items-center justify-center bg-ink-950/60 p-4">
             <img
               [src]="photo.url"
               [alt]="photo.title"
               class="max-h-[45vh] w-full rounded-2xl object-contain lg:max-h-full"
             />
+            <app-watermark-overlay />
           </div>
 
           <div class="flex min-h-0 flex-col border-t border-ink-800 lg:border-l lg:border-t-0">
@@ -76,6 +79,7 @@ import { ExifBarComponent } from '../exif-bar/exif-bar.component';
               <app-exif-bar class="mt-3 block" [exif]="photo.exif" />
             </div>
 
+            @if (isAuthenticated()) {
             <div class="flex items-center justify-between px-5 pt-4">
               <h3 class="text-[11px] uppercase tracking-[0.22em] text-neutral-500">Comentarios</h3>
               <span class="text-[11px] text-neutral-600">{{ comments().length }}</span>
@@ -120,6 +124,13 @@ import { ExifBarComponent } from '../exif-bar/exif-bar.component';
                 </button>
               </div>
             </div>
+            } @else {
+              <div class="flex flex-1 flex-col items-center justify-center px-8 text-center">
+                <h3 class="font-display text-lg font-medium text-white">Únete a la conversación</h3>
+                <p class="mt-2 max-w-xs text-sm leading-relaxed text-neutral-400">Inicia sesión para ver los comentarios y compartir tu opinión.</p>
+                <button type="button" class="btn-accent mt-5 px-5 py-3" (click)="login()">Entrar en modo demostración</button>
+              </div>
+            }
           </div>
         </div>
       </div>
@@ -131,8 +142,10 @@ export class PhotoDetailModalComponent {
   @Output() onClose = new EventEmitter<void>();
 
   private readonly photoService = inject(PhotoMockService);
+  private readonly auth = inject(AuthMockService);
 
   readonly draft = signal('');
+  readonly isAuthenticated = this.auth.isAuthenticated;
   readonly comments = computed(() =>
     this.photoService.comments().filter((comment) => comment.photoId === this.photo.id),
   );
@@ -188,11 +201,18 @@ export class PhotoDetailModalComponent {
   }
 
   submit(): void {
+    if (!this.auth.isAuthenticated()) {
+      return;
+    }
     const text = this.draft().trim();
     if (!text) {
       return;
     }
     this.photoService.addComment(this.photo.id, text);
     this.draft.set('');
+  }
+
+  login(): void {
+    void this.auth.login();
   }
 }
