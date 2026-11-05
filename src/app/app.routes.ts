@@ -23,5 +23,11 @@ export const routes: Routes = [
     loadComponent: () =>
       import('./features/dashboard/dashboard.component').then((m) => m.DashboardComponent),
   },
+  {
+    path: 'account/profile',
+    title: 'ÑanduGrid — Editar perfil',
+    loadComponent: () =>
+      import('./features/profile-edit/profile-edit.component').then((m) => m.ProfileEditComponent),
+  },
   { path: '**', redirectTo: '' },
 ];

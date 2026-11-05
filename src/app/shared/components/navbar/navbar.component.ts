@@ -1,5 +1,6 @@
-import { ChangeDetectionStrategy, Component } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
 import { RouterLink, RouterLinkActive } from '@angular/router';
+import { AuthMockService } from '../../../core/services/auth-mock.service';
 
 @Component({
   selector: 'app-navbar',
@@ -27,7 +28,7 @@ import { RouterLink, RouterLinkActive } from '@angular/router';
           </a>
 
           <a
-            routerLink="/u/tu-usuario"
+            [routerLink]="profileLink()"
             routerLinkActive="bg-white/5 text-white"
             class="hidden rounded-full px-4 py-2 text-sm text-neutral-400 transition hover:text-white sm:block"
           >
@@ -49,9 +50,28 @@ import { RouterLink, RouterLinkActive } from '@angular/router';
             </svg>
             Subir Foto
           </a>
+          @if (isAuthenticated()) {
+            <button type="button" class="btn-icon hidden sm:inline-flex" aria-label="Cerrar sesión" title="Cerrar sesión" (click)="logout()">
+              <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M10 17l5-5-5-5M15 12H3"/><path d="M12 3h6a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-6"/></svg>
+            </button>
+          } @else {
+            <button type="button" class="btn-secondary hidden px-4 py-2 text-xs sm:inline-flex" (click)="login()">Entrar</button>
+          }
         </div>
       </nav>
     </header>
   `,
 })
-export class NavbarComponent {}
+export class NavbarComponent {
+  private readonly auth = inject(AuthMockService);
+  readonly isAuthenticated = this.auth.isAuthenticated;
+  readonly profileLink = computed(() => ['/u', this.auth.demoProfile().username]);
+
+  logout(): void {
+    this.auth.logout();
+  }
+
+  login(): void {
+    void this.auth.login();
+  }
+}

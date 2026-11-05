@@ -14,19 +14,55 @@ const MOCK_USER: User = {
   ],
 };
 
+const PROFILE_STORAGE_KEY = 'nandugrid.profile';
+
+function loadProfile(): User {
+  try {
+    const stored = globalThis.localStorage?.getItem(PROFILE_STORAGE_KEY);
+    if (!stored) {
+      return MOCK_USER;
+    }
+    const profile = JSON.parse(stored) as Partial<User>;
+    return {
+      ...MOCK_USER,
+      ...profile,
+      links: Array.isArray(profile.links) ? profile.links : MOCK_USER.links,
+    };
+  } catch {
+    return MOCK_USER;
+  }
+}
+
 @Injectable({ providedIn: 'root' })
 export class AuthMockService {
-  private readonly _currentUser = signal<User | null>(MOCK_USER);
+  private readonly _profile = signal<User>(loadProfile());
+  private readonly _currentUser = signal<User | null>(this._profile());
 
+  readonly demoProfile = this._profile.asReadonly();
   readonly currentUser = this._currentUser.asReadonly();
   readonly isAuthenticated = computed(() => this._currentUser() !== null);
 
   login(): Promise<User> {
-    this._currentUser.set(MOCK_USER);
-    return Promise.resolve(MOCK_USER);
+    const profile = this._profile();
+    this._currentUser.set(profile);
+    return Promise.resolve(profile);
   }
 
   logout(): void {
     this._currentUser.set(null);
+  }
+
+  updateProfile(updates: Partial<User>): User {
+    const profile = { ...this._profile(), ...updates };
+    this._profile.set(profile);
+    if (this._currentUser()) {
+      this._currentUser.set(profile);
+    }
+    try {
+      globalThis.localStorage?.setItem(PROFILE_STORAGE_KEY, JSON.stringify(profile));
+    } catch {
+      return profile;
+    }
+    return profile;
   }
 }

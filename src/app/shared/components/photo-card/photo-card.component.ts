@@ -1,18 +1,19 @@
 import { ChangeDetectionStrategy, Component, EventEmitter, Input, Output } from '@angular/core';
 import { Photo, PhotoPurpose } from '../../../core/models/photo.model';
 import { ExifBarComponent } from '../exif-bar/exif-bar.component';
+import { WatermarkOverlayComponent } from '../watermark-overlay/watermark-overlay.component';
 
 @Component({
   selector: 'app-photo-card',
   standalone: true,
-  imports: [ExifBarComponent],
+  imports: [ExifBarComponent, WatermarkOverlayComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <article class="group animate-fade-in-up">
       <button
         type="button"
         (click)="onPhotoClick.emit(photo.id)"
-        class="block w-full cursor-pointer overflow-hidden rounded-3xl border border-white/5 bg-ink-900 shadow-soft focus:outline-none focus-visible:ring-2 focus-visible:ring-accent-500/60"
+        class="relative block w-full cursor-pointer overflow-hidden rounded-3xl border border-white/5 bg-ink-900 shadow-soft focus:outline-none focus-visible:ring-2 focus-visible:ring-accent-500/60"
         [attr.aria-label]="'Abrir ' + photo.title"
       >
         <img
@@ -21,6 +22,7 @@ import { ExifBarComponent } from '../exif-bar/exif-bar.component';
           loading="lazy"
           class="aspect-[4/3] w-full object-cover transition duration-700 ease-out group-hover:scale-[1.02]"
         />
+        <app-watermark-overlay />
       </button>
 
       <div class="mt-4 flex items-center justify-between gap-4">

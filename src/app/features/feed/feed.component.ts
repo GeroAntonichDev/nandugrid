@@ -1,5 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { PhotoMockService } from '../../core/services/photo-mock.service';
+import { AuthMockService } from '../../core/services/auth-mock.service';
 import { PhotoCardComponent } from '../../shared/components/photo-card/photo-card.component';
 import { PhotoDetailModalComponent } from '../../shared/components/photo-detail-modal/photo-detail-modal.component';
 
@@ -29,6 +30,13 @@ import { PhotoDetailModalComponent } from '../../shared/components/photo-detail-
         <button type="button" class="chip">Comercial</button>
       </div>
 
+      @if (loginWall()) {
+        <div class="mt-5 flex flex-wrap items-center justify-between gap-3 border-l-2 border-accent-500 bg-white/[0.03] px-4 py-3" role="status">
+          <p class="text-sm text-neutral-300">Inicia sesión para dar upvotes a las fotos.</p>
+          <button type="button" class="btn-accent px-4 py-2 text-xs" (click)="login()">Entrar en modo demo</button>
+        </div>
+      }
+
       <div class="mt-8 flex flex-col gap-12">
         @for (photo of photos(); track photo.id) {
           <app-photo-card
@@ -49,15 +57,26 @@ import { PhotoDetailModalComponent } from '../../shared/components/photo-detail-
 })
 export class FeedComponent {
   private readonly photoService = inject(PhotoMockService);
+  private readonly auth = inject(AuthMockService);
 
   readonly photos = this.photoService.photos;
+  readonly loginWall = signal(false);
   readonly selectedPhotoId = signal<string | null>(null);
   readonly selectedPhoto = computed(
     () => this.photos().find((photo) => photo.id === this.selectedPhotoId()) ?? null,
   );
 
   upvote(id: string): void {
+    if (!this.auth.isAuthenticated()) {
+      this.loginWall.set(true);
+      return;
+    }
     this.photoService.upvote(id);
+  }
+
+  login(): void {
+    void this.auth.login();
+    this.loginWall.set(false);
   }
 
   openPhoto(id: string): void {

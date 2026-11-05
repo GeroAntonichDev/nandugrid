@@ -110,6 +110,16 @@ export class PhotoMockService {
     this._photos.update((photos) => [photo, ...photos]);
   }
 
+  removePhoto(id: string): void {
+    this._photos.update((photos) => photos.filter((photo) => photo.id !== id));
+  }
+
+  renameAuthor(previousName: string, nextName: string): void {
+    this._photos.update((photos) =>
+      photos.map((photo) => photo.author === previousName ? { ...photo, author: nextName } : photo),
+    );
+  }
+
   addComment(photoId: string, text: string): void {
     const trimmed = text.trim();
     if (!trimmed) {
