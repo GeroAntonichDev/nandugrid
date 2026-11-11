@@ -29,5 +29,35 @@ export const routes: Routes = [
     loadComponent: () =>
       import('./features/profile-edit/profile-edit.component').then((m) => m.ProfileEditComponent),
   },
+  {
+    path: 'marketplace',
+    title: 'ÑanduGrid — Fotógrafos',
+    loadComponent: () =>
+      import('./features/marketplace/marketplace.component').then((m) => m.MarketplaceComponent),
+  },
+  {
+    path: 'services',
+    title: 'ÑanduGrid — Servicios',
+    loadComponent: () =>
+      import('./features/services/services.component').then((m) => m.ServicesComponent),
+  },
+  {
+    path: 'bookings',
+    title: 'ÑanduGrid — Reservas',
+    loadComponent: () =>
+      import('./features/bookings/bookings.component').then((m) => m.BookingsComponent),
+  },
+  {
+    path: 'favorites',
+    title: 'ÑanduGrid — Favoritos',
+    loadComponent: () =>
+      import('./features/favorites/favorites.component').then((m) => m.FavoritesComponent),
+  },
+  {
+    path: 'messages',
+    title: 'ÑanduGrid — Mensajes',
+    loadComponent: () =>
+      import('./features/messages/messages.component').then((m) => m.MessagesComponent),
+  },
   { path: '**', redirectTo: '' },
 ];

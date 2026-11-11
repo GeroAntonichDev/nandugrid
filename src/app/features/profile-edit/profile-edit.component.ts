@@ -2,12 +2,12 @@ import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@a
 import { RouterLink } from '@angular/router';
 import { UserLink } from '../../core/models/user.model';
 import { AuthMockService } from '../../core/services/auth-mock.service';
-import { PhotoMockService } from '../../core/services/photo-mock.service';
+import { LoginWallComponent } from '../../shared/components/login-wall/login-wall.component';
 
 @Component({
   selector: 'app-profile-edit',
   standalone: true,
-  imports: [RouterLink],
+  imports: [RouterLink, LoginWallComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     @if (isAuthenticated()) {
@@ -56,6 +56,20 @@ import { PhotoMockService } from '../../core/services/photo-mock.service';
               <span class="field-label">Ubicación</span>
               <input class="input" autocomplete="address-level2" maxlength="80" placeholder="Ciudad, país" [value]="location()" (input)="location.set($any($event.target).value)" />
             </label>
+            <label>
+              <span class="field-label">Email de contacto</span>
+              <input class="input" type="email" maxlength="80" placeholder="tu@email.com" [value]="contactEmail()" (input)="contactEmail.set($any($event.target).value)" />
+            </label>
+            <label>
+              <span class="field-label">Especialidades</span>
+              <input class="input" maxlength="120" placeholder="Paisaje, Retrato" [value]="specialtiesInput()" (input)="specialtiesInput.set($any($event.target).value)" />
+              <span class="mt-1 block text-xs text-neutral-500">Separadas por comas.</span>
+            </label>
+            <label class="sm:col-span-2">
+              <span class="field-label">Equipo</span>
+              <input class="input" maxlength="200" placeholder="Sony A7 IV, 24-70mm f/2.8" [value]="equipmentInput()" (input)="equipmentInput.set($any($event.target).value)" />
+              <span class="mt-1 block text-xs text-neutral-500">Cámaras, lentes y accesorios separados por comas.</span>
+            </label>
           </div>
 
           <section aria-labelledby="links-title">
@@ -89,17 +103,17 @@ import { PhotoMockService } from '../../core/services/photo-mock.service';
         </form>
       </section>
     } @else {
-      <section class="mx-auto max-w-xl px-4 py-24 text-center sm:px-6">
-        <p class="text-[11px] font-medium uppercase tracking-[0.3em] text-accent-400">Acceso privado</p>
-        <h1 class="mt-3 font-display text-3xl font-semibold text-white">Inicia sesión para editar tu perfil</h1>
-        <button type="button" class="btn-accent mt-8" (click)="login()">Entrar en modo demostración</button>
-      </section>
+      <app-login-wall
+        variant="page"
+        title="Inicia sesión para editar tu perfil"
+        message="Necesitas una sesión activa para actualizar tu información pública."
+        actionLabel="Entrar en modo demostración"
+      />
     }
   `,
 })
 export class ProfileEditComponent {
   private readonly auth = inject(AuthMockService);
-  private readonly photos = inject(PhotoMockService);
   private readonly initialUser = this.auth.currentUser();
 
   readonly isAuthenticated = this.auth.isAuthenticated;
@@ -108,6 +122,9 @@ export class ProfileEditComponent {
   readonly avatarUrl = signal(this.initialUser?.avatarUrl ?? '');
   readonly bio = signal(this.initialUser?.bio ?? '');
   readonly location = signal(this.initialUser?.location ?? '');
+  readonly contactEmail = signal(this.initialUser?.contactEmail ?? '');
+  readonly specialtiesInput = signal((this.initialUser?.specialties ?? []).join(', '));
+  readonly equipmentInput = signal((this.initialUser?.equipment ?? []).join(', '));
   readonly instagram = signal(this.initialUser?.links.find((link) => link.label === 'Instagram')?.url ?? '');
   readonly website = signal(this.initialUser?.links.find((link) => link.label === 'Sitio web')?.url ?? '');
   readonly avatarError = signal('');
@@ -161,6 +178,13 @@ export class ProfileEditComponent {
     reader.readAsDataURL(file);
   }
 
+  private parseList(value: string): string[] {
+    return value
+      .split(',')
+      .map((item) => item.trim())
+      .filter((item) => item.length > 0);
+  }
+
   save(event: Event): void {
     event.preventDefault();
     const currentUser = this.auth.currentUser();
@@ -179,15 +203,11 @@ export class ProfileEditComponent {
       avatarUrl: this.avatarUrl(),
       bio: this.bio().trim(),
       location: this.location().trim(),
+      contactEmail: this.contactEmail().trim(),
+      specialties: this.parseList(this.specialtiesInput()),
+      equipment: this.parseList(this.equipmentInput()),
       links,
     });
-    if (currentUser.displayName !== displayName) {
-      this.photos.renameAuthor(currentUser.displayName, displayName);
-    }
     this.saved.set(true);
-  }
-
-  login(): void {
-    void this.auth.login();
   }
 }

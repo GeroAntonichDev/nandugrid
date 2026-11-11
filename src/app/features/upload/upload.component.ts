@@ -3,6 +3,9 @@ import { Router } from '@angular/router';
 import { Photo, PhotoPurpose } from '../../core/models/photo.model';
 import { AuthMockService } from '../../core/services/auth-mock.service';
 import { PhotoMockService } from '../../core/services/photo-mock.service';
+import { ToastService } from '../../core/services/toast.service';
+import { PHOTO_CATEGORIES } from '../../core/utils/photo-categories';
+import { WatermarkOverlayComponent } from '../../shared/components/watermark-overlay/watermark-overlay.component';
 
 interface PurposeOption {
   value: PhotoPurpose;
@@ -11,15 +14,23 @@ interface PurposeOption {
   icon: string;
 }
 
+const DRIVE_SAMPLES = [
+  'https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&w=1400&q=80',
+  'https://images.unsplash.com/photo-1470770841072-f978cf4d019e?auto=format&fit=crop&w=1400&q=80',
+  'https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&w=1400&q=80',
+];
+
 @Component({
   selector: 'app-upload',
   standalone: true,
+  imports: [WatermarkOverlayComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './upload.component.html',
 })
 export class UploadComponent {
   private readonly photoService = inject(PhotoMockService);
   private readonly authService = inject(AuthMockService);
+  private readonly toast = inject(ToastService);
   private readonly router = inject(Router);
 
   readonly purposes: PurposeOption[] = [
@@ -44,34 +55,59 @@ export class UploadComponent {
     },
   ];
 
+  readonly categories = PHOTO_CATEGORIES;
   readonly purpose = signal<PhotoPurpose | null>(null);
   readonly step = computed(() => (this.purpose() ? 2 : 1));
 
   readonly previewUrl = signal<string | null>(null);
   readonly isDragging = signal(false);
+  readonly showWatermark = signal(true);
+  readonly authorUsername = computed(() => this.authService.currentUser()?.username);
 
   readonly title = signal('');
+  readonly category = signal('');
+  readonly description = signal('');
+  readonly tagsInput = signal('');
   readonly camera = signal('');
   readonly lens = signal('');
   readonly iso = signal<number | null>(null);
   readonly aperture = signal('');
   readonly shutter = signal('');
+  readonly focalLength = signal('');
   readonly price = signal<number | null>(null);
+
+  readonly tags = computed(() =>
+    this.tagsInput()
+      .split(',')
+      .map((tag) => tag.trim().toLowerCase())
+      .filter((tag) => tag.length > 0),
+  );
 
   readonly canPublish = computed(() => {
     const purpose = this.purpose();
-    if (!purpose || !this.previewUrl() || !this.title().trim()) {
+    if (!purpose || !this.previewUrl() || !this.title().trim() || !this.category()) {
       return false;
     }
-    return purpose !== 'feedback' || this.camera().trim().length > 0;
+    if (purpose === 'feedback' && !this.camera().trim()) {
+      return false;
+    }
+    const price = this.price();
+    if (purpose === 'commercial' && (!price || price <= 0)) {
+      return false;
+    }
+    return true;
   });
 
   selectPurpose(value: PhotoPurpose): void {
     this.purpose.set(value);
+    if (this.previewUrl() && value === 'feedback') {
+      this.populateSimulatedExif();
+    }
   }
 
   changePurpose(): void {
     this.purpose.set(null);
+    this.resetDetails();
   }
 
   onFileInput(event: Event): void {
@@ -103,24 +139,50 @@ export class UploadComponent {
     this.previewUrl.set(null);
   }
 
+  importFromDrive(): void {
+    const sample = DRIVE_SAMPLES[Math.floor(Math.random() * DRIVE_SAMPLES.length)];
+    this.previewUrl.set(sample);
+    this.showWatermark.set(true);
+    if (!this.title().trim()) {
+      this.title.set('Imagen importada de Drive');
+    }
+    if (this.purpose() === 'feedback') {
+      this.populateSimulatedExif();
+    }
+    this.toast.show('Imagen importada desde Google Drive (demo)', 'info');
+  }
+
   publish(): void {
     const purpose = this.purpose();
     const url = this.previewUrl();
-    if (!purpose || !url || !this.title().trim()) {
+    const title = this.title().trim();
+    const category = this.category();
+    const user = this.authService.currentUser();
+    if (!purpose || !url || !title || !category || !user) {
+      return;
+    }
+    if (purpose === 'feedback' && !this.camera().trim()) {
+      return;
+    }
+    const price = this.price();
+    if (purpose === 'commercial' && (!price || price <= 0)) {
       return;
     }
 
     const iso = this.iso();
-    const price = this.price();
+    const description = this.description().trim();
 
     const photo: Photo = {
       id: globalThis.crypto?.randomUUID?.() ?? `ph-${Date.now()}`,
       url,
       purpose,
       upvotes: 0,
-      title: this.title().trim(),
-      author: this.authService.currentUser()?.displayName ?? 'Tú',
+      title,
+      authorId: user.id,
+      category,
+      tags: this.tags(),
       createdAt: new Date().toISOString(),
+      ...(description ? { description } : {}),
       exif:
         purpose === 'feedback'
           ? {
@@ -129,16 +191,17 @@ export class UploadComponent {
               iso: iso ?? undefined,
               aperture: this.aperture().trim() || undefined,
               shutter: this.shutter().trim() || undefined,
+              focalLength: this.focalLength().trim() || undefined,
             }
           : {},
       ...(purpose === 'commercial' && price ? { price } : {}),
     };
 
     this.photoService.addPhoto(photo);
+    this.toast.show('Foto publicada');
 
     if (purpose === 'commercial') {
-      const username = this.authService.currentUser()?.username ?? 'tu-usuario';
-      this.router.navigate(['/u', username]);
+      this.router.navigate(['/u', user.username]);
       return;
     }
     this.router.navigate(['/']);
@@ -151,9 +214,25 @@ export class UploadComponent {
     const reader = new FileReader();
     reader.onload = () => {
       this.previewUrl.set(reader.result as string);
-      this.populateSimulatedExif();
+      if (this.purpose() === 'feedback') {
+        this.populateSimulatedExif();
+      }
     };
     reader.readAsDataURL(file);
+  }
+
+  private resetDetails(): void {
+    this.category.set('');
+    this.description.set('');
+    this.tagsInput.set('');
+    this.camera.set('');
+    this.lens.set('');
+    this.iso.set(null);
+    this.aperture.set('');
+    this.shutter.set('');
+    this.focalLength.set('');
+    this.price.set(null);
+    this.showWatermark.set(true);
   }
 
   private populateSimulatedExif(): void {
@@ -162,5 +241,6 @@ export class UploadComponent {
     this.iso.set(200);
     this.aperture.set('f/2.8');
     this.shutter.set('1/250');
+    this.focalLength.set('35mm');
   }
 }

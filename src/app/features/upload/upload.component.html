@@ -52,47 +52,77 @@
   } @else {
     <div class="mt-8 grid animate-fade-in-up gap-6 lg:grid-cols-2">
       <div>
-        <label
+        <div
+          [class]="
+            isDragging()
+              ? 'relative aspect-[4/3] overflow-hidden rounded-3xl border border-dashed border-accent-500 bg-accent-500/10'
+              : 'relative aspect-[4/3] overflow-hidden rounded-3xl border border-dashed border-ink-700 bg-ink-900 transition hover:border-accent-500/50'
+          "
           (dragover)="onDragOver($event)"
           (dragleave)="onDragLeave()"
           (drop)="onDrop($event)"
-          [class]="
-            isDragging()
-              ? 'flex aspect-[4/3] cursor-pointer flex-col items-center justify-center overflow-hidden rounded-3xl border border-dashed border-accent-500 bg-accent-500/10 text-center'
-              : 'flex aspect-[4/3] cursor-pointer flex-col items-center justify-center overflow-hidden rounded-3xl border border-dashed border-ink-700 bg-ink-900 text-center transition hover:border-accent-500/50'
-          "
         >
-          <input type="file" accept="image/*" class="sr-only" (change)="onFileInput($event)" />
+          <label class="flex h-full w-full cursor-pointer flex-col items-center justify-center text-center">
+            <input type="file" accept="image/*" class="sr-only" (change)="onFileInput($event)" />
+            @if (previewUrl()) {
+              <img [src]="previewUrl()" alt="Vista previa" class="h-full w-full object-cover" />
+            } @else {
+              <svg
+                class="h-8 w-8 text-neutral-500"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                stroke-width="1.6"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                aria-hidden="true"
+              >
+                <path d="M12 16V4M7 9l5-5 5 5M5 20h14" />
+              </svg>
+              <p class="mt-3 px-6 text-sm text-neutral-400">
+                Arrastrá una imagen o hacé clic para elegir
+              </p>
+              <p class="mt-1 text-[11px] uppercase tracking-wider text-neutral-600">
+                JPG · PNG · WebP
+              </p>
+            }
+          </label>
           @if (previewUrl()) {
-            <img [src]="previewUrl()" alt="Vista previa" class="h-full w-full object-cover" />
-          } @else {
-            <svg
-              class="h-8 w-8 text-neutral-500"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              stroke-width="1.6"
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              aria-hidden="true"
-            >
-              <path d="M12 16V4M7 9l5-5 5 5M5 20h14" />
-            </svg>
-            <p class="mt-3 px-6 text-sm text-neutral-400">
-              Arrastrá una imagen o hacé clic para elegir
-            </p>
-            <p class="mt-1 text-[11px] uppercase tracking-wider text-neutral-600">JPG · PNG · WebP</p>
+            <app-watermark-overlay
+              [visible]="showWatermark()"
+              [authorUsername]="authorUsername()"
+            />
           }
-        </label>
-        @if (previewUrl()) {
+        </div>
+
+        <div class="mt-3 flex flex-wrap items-center gap-3">
           <button
             type="button"
-            (click)="clearImage()"
-            class="mt-3 text-[13px] text-neutral-400 transition hover:text-white"
+            class="btn-secondary px-3 py-2 text-xs"
+            (click)="importFromDrive()"
           >
-            Quitar imagen
+            Importar desde Google Drive
           </button>
-        }
+          @if (previewUrl()) {
+            <button
+              type="button"
+              class="text-[13px] text-neutral-400 transition hover:text-white"
+              (click)="clearImage()"
+            >
+              Quitar imagen
+            </button>
+            <button
+              type="button"
+              class="text-[13px] text-neutral-400 transition hover:text-white"
+              (click)="showWatermark.set(!showWatermark())"
+            >
+              Marca de agua: {{ showWatermark() ? 'visible' : 'oculta' }}
+            </button>
+          }
+        </div>
+        <p class="mt-2 text-[11px] leading-relaxed text-neutral-500">
+          La marca de agua con tu usuario se aplica automáticamente a la vista pública.
+        </p>
       </div>
 
       <div class="flex flex-col gap-4">
@@ -106,6 +136,55 @@
             (input)="title.set($any($event.target).value)"
             class="input"
           />
+        </div>
+
+        <div>
+          <label class="field-label" for="category">Categoría</label>
+          <select
+            id="category"
+            class="input"
+            [value]="category()"
+            (change)="category.set($any($event.target).value)"
+          >
+            <option value="" disabled>Elegí una categoría</option>
+            @for (item of categories; track item) {
+              <option [value]="item">{{ item }}</option>
+            }
+          </select>
+        </div>
+
+        <div>
+          <label class="field-label" for="description">Descripción</label>
+          <textarea
+            id="description"
+            class="input min-h-20 resize-y"
+            maxlength="280"
+            placeholder="Contá el contexto de la toma..."
+            [value]="description()"
+            (input)="description.set($any($event.target).value)"
+          ></textarea>
+        </div>
+
+        <div>
+          <label class="field-label" for="tags">Etiquetas</label>
+          <input
+            id="tags"
+            type="text"
+            placeholder="amanecer, cordillera, luz natural"
+            [value]="tagsInput()"
+            (input)="tagsInput.set($any($event.target).value)"
+            class="input"
+          />
+          <p class="mt-1 text-[11px] text-neutral-500">Separadas por comas.</p>
+          @if (tags().length) {
+            <div class="mt-2 flex flex-wrap gap-1.5">
+              @for (tag of tags(); track tag) {
+                <span class="rounded-full border border-white/10 px-2.5 py-1 text-[11px] text-neutral-400">
+                  #{{ tag }}
+                </span>
+              }
+            </div>
+          }
         </div>
 
         @if (purpose() === 'feedback') {
@@ -165,6 +244,17 @@
                 class="input"
               />
             </div>
+            <div>
+              <label class="field-label" for="focal">Distancia focal</label>
+              <input
+                id="focal"
+                type="text"
+                placeholder="35mm"
+                [value]="focalLength()"
+                (input)="focalLength.set($any($event.target).value)"
+                class="input"
+              />
+            </div>
           </div>
 
           <p class="text-[11px] leading-relaxed text-neutral-500">
@@ -175,12 +265,12 @@
 
         @if (purpose() === 'commercial') {
           <div>
-            <label class="field-label" for="price">Precio / Servicio asociado ($)</label>
+            <label class="field-label" for="price">Precio del servicio (USD)</label>
             <input
               id="price"
               type="number"
-              min="0"
-              placeholder="Ej: 50000"
+              min="1"
+              placeholder="Ej: 250"
               [value]="price() ?? ''"
               (input)="price.set($any($event.target).valueAsNumber || null)"
               class="input"

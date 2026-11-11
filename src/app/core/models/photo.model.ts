@@ -16,7 +16,10 @@ export interface Photo {
   exif: ExifData;
   upvotes: number;
   title: string;
-  author: string;
+  authorId: string;
+  category: string;
+  description?: string;
+  tags: string[];
   createdAt: string;
   price?: number;
 }

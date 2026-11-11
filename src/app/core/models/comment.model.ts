@@ -1,7 +1,8 @@
 export interface Comment {
   id: string;
   photoId: string;
-  authorName: string;
+  authorId: string;
   text: string;
-  createdAt: Date;
+  tags?: string[];
+  createdAt: string;
 }

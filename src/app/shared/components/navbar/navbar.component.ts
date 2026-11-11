@@ -1,6 +1,7 @@
 import { ChangeDetectionStrategy, Component, computed, inject } from '@angular/core';
 import { RouterLink, RouterLinkActive } from '@angular/router';
 import { AuthMockService } from '../../../core/services/auth-mock.service';
+import { MessagingMockService } from '../../../core/services/messaging-mock.service';
 
 @Component({
   selector: 'app-navbar',
@@ -9,7 +10,10 @@ import { AuthMockService } from '../../../core/services/auth-mock.service';
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     <header class="sticky top-0 z-40 border-b border-white/5 bg-ink-950/80 backdrop-blur-xl">
-      <nav class="mx-auto flex h-16 max-w-shell items-center justify-between gap-4 px-4 sm:px-6 lg:px-8">
+      <nav
+        aria-label="Navegación principal"
+        class="mx-auto flex h-16 max-w-shell items-center justify-between gap-4 px-4 sm:px-6 lg:px-8"
+      >
         <a
           routerLink="/"
           class="font-display text-base font-semibold uppercase tracking-[0.3em] text-white transition hover:text-accent-300 sm:text-lg"
@@ -21,6 +25,7 @@ import { AuthMockService } from '../../../core/services/auth-mock.service';
           <a
             routerLink="/"
             routerLinkActive="bg-white/5 text-white"
+            ariaCurrentWhenActive="page"
             [routerLinkActiveOptions]="{ exact: true }"
             class="hidden rounded-full px-4 py-2 text-sm text-neutral-400 transition hover:text-white sm:block"
           >
@@ -28,11 +33,56 @@ import { AuthMockService } from '../../../core/services/auth-mock.service';
           </a>
 
           <a
-            [routerLink]="profileLink()"
+            routerLink="/marketplace"
             routerLinkActive="bg-white/5 text-white"
+            ariaCurrentWhenActive="page"
             class="hidden rounded-full px-4 py-2 text-sm text-neutral-400 transition hover:text-white sm:block"
           >
+            Fotógrafos
+          </a>
+
+          <a
+            [routerLink]="profileLink()"
+            routerLinkActive="bg-white/5 text-white"
+            ariaCurrentWhenActive="page"
+            class="hidden rounded-full px-4 py-2 text-sm text-neutral-400 transition hover:text-white md:block"
+          >
             Mi Perfil
+          </a>
+
+          <a
+            routerLink="/dashboard"
+            routerLinkActive="bg-white/5 text-white"
+            ariaCurrentWhenActive="page"
+            class="hidden rounded-full px-4 py-2 text-sm text-neutral-400 transition hover:text-white sm:block"
+          >
+            Panel
+          </a>
+
+          <a
+            routerLink="/bookings"
+            routerLinkActive="bg-white/5 text-white"
+            ariaCurrentWhenActive="page"
+            class="hidden rounded-full px-4 py-2 text-sm text-neutral-400 transition hover:text-white sm:block"
+          >
+            Reservas
+          </a>
+
+          <a
+            routerLink="/messages"
+            routerLinkActive="bg-white/5 text-white"
+            ariaCurrentWhenActive="page"
+            class="relative hidden rounded-full px-4 py-2 text-sm text-neutral-400 transition hover:text-white sm:block"
+          >
+            Mensajes
+            @if (unreadMessages(); as unread) {
+              <span
+                class="absolute -right-1 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-accent-500 px-1 text-[9px] font-semibold text-ink-950"
+                [attr.aria-label]="unread + ' mensajes sin leer'"
+              >
+                {{ unread }}
+              </span>
+            }
           </a>
 
           <a routerLink="/upload" class="btn-accent px-5 py-2.5 text-[13px]">
@@ -64,8 +114,13 @@ import { AuthMockService } from '../../../core/services/auth-mock.service';
 })
 export class NavbarComponent {
   private readonly auth = inject(AuthMockService);
+  private readonly messaging = inject(MessagingMockService);
   readonly isAuthenticated = this.auth.isAuthenticated;
   readonly profileLink = computed(() => ['/u', this.auth.demoProfile().username]);
+  readonly unreadMessages = computed(() => {
+    const id = this.auth.currentUser()?.id;
+    return id ? this.messaging.unreadCount(id) : 0;
+  });
 
   logout(): void {
     this.auth.logout();

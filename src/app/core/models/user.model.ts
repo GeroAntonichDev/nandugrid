@@ -11,4 +11,7 @@ export interface User {
   bio?: string;
   location?: string;
   links: UserLink[];
+  specialties?: string[];
+  equipment?: string[];
+  contactEmail?: string;
 }
