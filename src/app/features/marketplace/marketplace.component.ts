@@ -222,6 +222,12 @@ export class MarketplaceComponent {
     return this.currentUser()?.id === user.id;
   }
 
+  reputation(userId: string): Reputation {
+    const photos = this.photos.getByAuthorId(userId);
+    const upvotes = photos.reduce((total, photo) => total + photo.upvotes, 0);
+    return calculateReputation(upvotes, photos.length, this.social.followerIds(userId).length);
+  }
+
   minPrice(ownerId: string): number | null {
     return this.services.minPrice(ownerId);
   }
@@ -268,6 +274,14 @@ export class MarketplaceComponent {
       return;
     }
     this.hirePhotographer.set(user);
+  }
+
+  openMessage(user: User): void {
+    if (!this.auth.isAuthenticated()) {
+      this.loginWall.set(true);
+      return;
+    }
+    void this.router.navigate(['/messages'], { queryParams: { with: user.username } });
   }
 
   resetFilters(): void {

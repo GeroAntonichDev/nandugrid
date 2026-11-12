@@ -1,6 +1,6 @@
 import { ChangeDetectionStrategy, Component, computed, inject, signal } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
-import { ActivatedRoute, RouterLink } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { Photo } from '../../core/models/photo.model';
 import { Service } from '../../core/models/service.model';
 import { AuthMockService } from '../../core/services/auth-mock.service';
@@ -9,6 +9,7 @@ import { ServiceMockService } from '../../core/services/service-mock.service';
 import { SocialMockService } from '../../core/services/social-mock.service';
 import { ToastService } from '../../core/services/toast.service';
 import { UserMockService } from '../../core/services/user-mock.service';
+import { calculateReputation } from '../../core/utils/reputation';
 import { HireModalComponent } from '../../shared/components/hire-modal/hire-modal.component';
 import { LoginWallComponent } from '../../shared/components/login-wall/login-wall.component';
 import { PhotoCardComponent } from '../../shared/components/photo-card/photo-card.component';
